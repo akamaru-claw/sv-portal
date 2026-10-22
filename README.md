@@ -2,7 +2,7 @@
 
 Koordinations-Website für die Schülervertretung: Sitzungen mit Tagesordnung und Protokoll, Projekte mit Aufgaben, Abstimmungen, Dateien, Pinnwand und SV-Kasse. Konten entstehen nur über Einladungen der SV-Lehrkräfte, ohne E-Mail-Adressen.
 
-Technik: Node.js 22, Express, SQLite (eine Datei), kein Build-Schritt, keine externen Dienste, keine Tracker, Schriften lokal eingebunden.
+Technik: Node.js 22, Express, SQLite (eine Datei), kein Build-Schritt, keine externen Dienste, keine Tracker. Schriften und die beiden Bewegungs-Bibliotheken liegen lokal — die Seite setzt `script-src 'self'` und `font-src 'self'`, vom CDN käme nichts durch.
 
 ## Rollen
 
@@ -142,5 +142,38 @@ src/routes/*.js      API: Konten, Mitglieder, Termine, Projekte, Abstimmungen, D
 src/cli.js           Kommandozeile: Lehrkraft anlegen, Notfall-Reset, Sicherung
 public/js/app.js     Router und Grundgerüst der Oberfläche
 public/js/views/     Seiten der Oberfläche
+public/js/motion.js  Weiches Scrollen und Auftritte (GSAP, Lenis)
 public/css/app.css   Gestaltung (hell und dunkel)
+public/vendor/       GSAP, ScrollTrigger, Lenis – Herkunft in HERKUNFT.md
+tools/pruefung.mjs   Funktionsprüfung über die echte API
 ```
+
+## Prüfen
+
+`tools/pruefung.mjs` geht einmal durch alles, was das Portal kann: Anmeldung,
+Rechte, Einladungen, Sitzungen mit Tagesordnung und Protokoll, Projekte,
+Aufgaben, Abstimmungen, Pinnwand, Dateien, Kasse, Kalender-Abo. Immer gegen
+eine Wegwerf-Instanz, nie gegen die echte Datenbank:
+
+```bash
+rm -rf /tmp/svtest && mkdir -p /tmp/svtest
+DATA_DIR=/tmp/svtest node src/cli.js lehrkraft-anlegen lehrer "Test"   # Passwort merken
+PORT=3450 DATA_DIR=/tmp/svtest PUBLIC_URL=http://localhost:3450 TRUST_PROXY=0 node src/server.js &
+node tools/pruefung.mjs http://127.0.0.1:3450 lehrer <einmal-passwort>
+```
+
+Der Durchlauf endet mit Code 1, sobald eine Prüfung fehlschlägt.
+
+## Bewegung
+
+`public/js/motion.js` ist eigenständig: `app.js` ruft nach jedem fertigen
+Seiteninhalt einmal `seiteFertig()`, sonst nichts. Enthalten sind weiches
+Scrollen (Lenis am GSAP-Ticker, **eine** Schleife), Auftritte beim Scrollen,
+ein kurzer Seitenwechsel, hochzählende Zahlen, wachsende Ergebnisbalken und
+die wandernde Markierung in der Seitenleiste.
+
+Fällt die Datei aus — kein JavaScript, alte Browser, geblockte Datei —, bleibt
+das Portal vollständig benutzbar: die Anfangszustände im CSS greifen nur unter
+`body.js-motion`, und die Klasse setzt erst das Modul. `prefers-reduced-motion`
+schaltet alles ab; für eine Schulseite ist das kein Nebenschauplatz, weil
+Bewegung Migräne und Schwindel auslösen kann.

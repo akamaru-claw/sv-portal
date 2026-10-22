@@ -577,3 +577,171 @@ dialog.dlg::backdrop { background: rgba(10, 20, 10, .5); }
 
 .loading { color: var(--text-3); padding: 40px 0; }
 .error-page { padding: 40px 0; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Bewegung und Tiefe
+   ══════════════════════════════════════════════════════════════════════════
+   Alles hier ist Zugabe. Die Anfangszustände der Auftritte greifen nur unter
+   `body.js-motion`, und die Klasse setzt erst `js/motion.js`. Ohne das Modul
+   — kein JavaScript, alte Browser, geblockte Datei — steht die Seite
+   vollständig und unverändert da.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Lenis scrollt das Dokument. Mehr als diese zwei Zeilen braucht es dafür
+   nicht; die mitgelieferte lenis.css ist deshalb nicht eingebunden. */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+.js-motion [data-auftritt] { opacity: 0; transform: translateY(14px); }
+.js-motion [data-auftritt].ist-da { will-change: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Doppelt gesichert: das Modul rührt dann nichts an, und falls doch ein
+     Anfangszustand gesetzt wurde, bleibt nichts unsichtbar hängen. */
+  .js-motion [data-auftritt] { opacity: 1 !important; transform: none !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---------- Die wandernde Markierung in der Seitenleiste ----------
+   Statt dass die weiße Fläche von Punkt zu Punkt springt, fährt sie hin.
+   Dafür trägt nicht mehr der Verweis den Hintergrund, sondern ein eigenes
+   Element dahinter. Ohne das Modul bleibt die alte Markierung stehen — die
+   Regeln unten greifen nur unter `body.js-motion`. */
+.side .nav { position: relative; }
+.nav-strich {
+  position: absolute; left: 0; top: 0; width: 100%;
+  border-radius: var(--radius-s);
+  background: #fff;
+  opacity: 0; pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+.nav-strich::after {
+  /* Ein gelber Griff an der Kante — dieselbe Farbe wie die Zähler. */
+  content: ''; position: absolute; left: 0; top: 18%; bottom: 18%; width: 3px;
+  background: var(--marker); border-radius: 0 3px 3px 0;
+}
+@media (prefers-color-scheme: dark) { .nav-strich { background: var(--gruen-hell); } }
+.js-motion .side .nav a { position: relative; z-index: 1; }
+.js-motion .side .nav a[aria-current="page"] { background: none; }
+@media (prefers-color-scheme: dark) {
+  .js-motion .side .nav a[aria-current="page"] { background: none; }
+}
+
+/* ---------- Tiefe statt Flächen ----------
+   Die Karten hatten nur eine Haarlinie. Ein sehr weicher, gestufter Schatten
+   macht die Ebene lesbar, ohne dass es nach Schatulle aussieht. */
+.panel, .pcard, .meeting, .post, .person, .lane, .table-wrap {
+  box-shadow: 0 1px 2px rgba(23, 33, 26, .04), 0 2px 10px rgba(23, 33, 26, .035);
+}
+@media (prefers-color-scheme: dark) {
+  .panel, .pcard, .meeting, .post, .person, .lane, .table-wrap {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 2px 12px rgba(0, 0, 0, .25);
+  }
+}
+
+/* Anfassbares hebt sich leicht an. Nur dort, wo wirklich ein Ziel dahinter
+   liegt — eine Karte ohne Verweis soll nicht so tun als wäre sie eine. */
+a.pcard, a.row, a.post, .meeting a {
+  transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .18s cubic-bezier(.22,1,.36,1), border-color .18s;
+}
+a.pcard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(23, 33, 26, .05), 0 10px 24px rgba(23, 33, 26, .09);
+}
+@media (prefers-reduced-motion: reduce) {
+  a.pcard:hover { transform: none; }
+}
+
+/* Knöpfe reagieren beim Drücken — das ist die kleinste Rückmeldung, die es
+   gibt, und auf dem Tablet die einzige vor dem Laden der nächsten Seite. */
+.btn { transition: transform .12s cubic-bezier(.22,1,.36,1), background-color .16s, border-color .16s, color .16s; }
+.btn:active:not([disabled]) { transform: scale(.975); }
+@media (prefers-reduced-motion: reduce) { .btn:active:not([disabled]) { transform: none; } }
+
+/* ---------- Ladezustand ----------
+   Statt „Wird geladen …" ein ruhiger Puls an derselben Stelle, an der gleich
+   der Inhalt steht. Kein Springen, kein Flackern. */
+.loading { position: relative; }
+.js-motion .loading { color: transparent; }
+.js-motion .loading::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(100deg, var(--linie) 8%, var(--gruen-zart) 18%, var(--linie) 33%);
+  background-size: 200% 100%;
+  border-radius: var(--radius);
+  animation: sv-schimmer 1.4s linear infinite;
+  opacity: .5;
+}
+@keyframes sv-schimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .js-motion .loading::after { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Auffrischung
+   ══════════════════════════════════════════════════════════════════════════
+   Nur Flächen, Kanten, Maße und Farbverläufe. Kein Markup, keine Abläufe.
+   Die Schriften bleiben: Atkinson Hyperlegible ist für schwaches Sehen und
+   Legasthenie entworfen, Young Serif gibt dem Portal sein Gesicht.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root { --radius: 12px; --radius-s: 9px; }
+
+/* ---------- Seitenleiste ----------
+   Statt einer flachen grünen Fläche ein leiser Verlauf nach unten und ein
+   Lichtsaum an der Kante. Das reicht, damit die Leiste als eigene Ebene
+   gelesen wird, statt als abgeschnittenes Rechteck. */
+.side {
+  background: linear-gradient(180deg, var(--gruen) 0%, var(--gruen-tief) 100%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, .1);
+}
+@media (prefers-color-scheme: dark) {
+  .side { background: linear-gradient(180deg, var(--gruen-tief) 0%, #071F07 100%); }
+}
+.brand-name { letter-spacing: -0.015em; }
+
+/* ---------- Überschriften ----------
+   Etwas größer, deutlich enger gesetzt. Young Serif verträgt das, und die
+   Seite bekommt damit einen Anfang statt nur einen ersten Absatz. */
+.hello h1 { font-size: clamp(2rem, 3.4vw, 2.7rem); letter-spacing: -0.02em; line-height: 1.08; }
+.page-head h1 { letter-spacing: -0.018em; }
+
+/* ---------- Die nächste Sitzung ----------
+   Der dicke grüne Rahmen bleibt — er zitiert die Linien der Bildmarke. Dazu
+   ein sehr heller Verlauf, damit die Karte Gewicht bekommt, ohne laut zu
+   werden. */
+.meeting {
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--gruen-zart) 0%, transparent 58%),
+    var(--flaeche);
+  box-shadow: 0 2px 6px rgba(15, 99, 14, .07), 0 14px 40px rgba(15, 99, 14, .07);
+}
+@media (prefers-color-scheme: dark) {
+  .meeting {
+    background: radial-gradient(120% 140% at 0% 0%, var(--gruen-hell) 0%, transparent 58%), var(--flaeche);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .4), 0 14px 40px rgba(0, 0, 0, .3);
+  }
+}
+.meeting-date { letter-spacing: -0.02em; }
+
+/* ---------- Knöpfe ---------- */
+.btn { border-radius: var(--radius-s); }
+.btn-primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gruen) 88%, #fff) 0%, var(--gruen) 100%);
+  box-shadow: 0 1px 2px rgba(15, 99, 14, .25);
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, var(--gruen) 0%, var(--gruen-tief) 100%);
+  box-shadow: 0 2px 8px rgba(15, 99, 14, .3);
+}
+/* Ältere Browser ohne `color-mix` bekommen den einfarbigen Knopf von oben —
+   der steht weiter in der Datei und bleibt gültig. */
+
+/* ---------- Eingabefelder ---------- */
+input, select, textarea { border-radius: var(--radius-s); }
+
+/* ---------- Zahlen ----------
+   Tabellenziffern: beim Hochzählen springt sonst die Breite. */
+.money-sum b, .lstat-num, .result-top, .turnout, .rsvp-count, .code-big {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,4 +1,5 @@
 import { html, $, $$, get, post, icon, loadMark, mark, avatar, setAuthHandler, ROLE_LABEL, toast } from './lib.js';
+import { starten as bewegungStarten, seiteFertig, nachObenSpringen } from './motion.js';
 
 const views = {
   dashboard: () => import('./views/dashboard.js'),
@@ -70,6 +71,7 @@ async function renderAuth(fnName, params = {}) {
   const mod = await views.auth();
   const root = $('#app');
   await mod[fnName]({ root, params, site: state.site, user: state.user, onDone: boot, setTitle: (t) => { document.title = `${t} – ${state.site.name}`; } });
+  seiteFertig(root);
 }
 
 function renderShell() {
@@ -138,6 +140,7 @@ async function route() {
     markNav('');
     setTitle('Nicht gefunden');
     main.innerHTML = String(html`<div class="page error-page"><h1>Diese Seite gibt es nicht</h1><p><a href="/">Zur Übersicht</a></p></div>`);
+    seiteFertig(main);
     return;
   }
   markNav(r.nav);
@@ -158,12 +161,14 @@ async function route() {
     const mod = await views[r.mod]();
     if (token !== state.navToken) return;
     await mod[r.fn](ctx);
-    if (token === state.navToken && !history.state?.keepScroll) window.scrollTo(0, 0);
+    if (token === state.navToken && !history.state?.keepScroll) nachObenSpringen();
+    if (token === state.navToken) seiteFertig(main);
   } catch (err) {
     if (token !== state.navToken || err.status === 401 || err.code === 'MUST_CHANGE_PW') return;
     console.error(err);
     main.innerHTML = String(html`<div class="page error-page"><h1>${err.status === 404 ? 'Nicht gefunden' : 'Das hat nicht geklappt'}</h1>
       <p>${err.message}</p><p><a href="/">Zur Übersicht</a></p></div>`);
+    seiteFertig(main);
   }
 }
 
@@ -219,6 +224,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#drawer
 
 (async () => {
   try {
+    bewegungStarten();
     await loadMark();
     await boot();
   } catch (err) {
