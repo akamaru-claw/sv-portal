@@ -13,7 +13,9 @@ export async function render(ctx) {
     const m = d.nextMeeting;
     const pendingPolls = d.polls.filter((p) => p.mayVote && !p.voted);
     const otherPolls = d.polls.filter((p) => !(p.mayVote && !p.voted));
-    const firstName = user.displayName.split(/\s+/)[0];
+    /* Der ganze Anzeigename, nicht nur das erste Wort. Bei Lehrkräften steht
+       dort „Herr Müller" — „Moin Herr" ist keine Begrüßung. */
+    const name = user.displayName.trim();
     const greet = GREETINGS[new Date().getDate() % GREETINGS.length];
     const canPlan = user.role !== 'mitglied';
     const running = (d.projects.aktiv || 0) + (d.projects.planung || 0);
@@ -21,7 +23,7 @@ export async function render(ctx) {
     main.innerHTML = String(html`
       <div class="page">
         <div class="hello">
-          <h1>${greet} ${firstName}</h1>
+          <h1>${greet} ${name}</h1>
           <p>${fmtDateLong(today())}. ${running ? `${plural(running, 'Projekt ist', 'Projekte sind')} in Arbeit` : 'Noch keine Projekte in Arbeit'}${d.projects.idee ? `, ${plural(d.projects.idee, 'Idee wartet', 'Ideen warten')} auf Unterstützung` : ''}.</p>
         </div>
 
